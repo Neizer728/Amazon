@@ -1,61 +1,15 @@
-pipeline {
-    agent any
-    environment {
-        MSSQL_CONTAINER_NAME = "mssql_server"
-    }
+#!groovy
+//  groovy Jenkinsfile
+pipeline  {
+    agent any;
     stages {
-        stage("Запуск MSSQL у Docker") {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'MSSQL-PASSWORD', variable: 'SA_PASSWORD')]) {
-                        sh """
-                        docker stop $MSSQL_CONTAINER_NAME || true
-                        docker rm $MSSQL_CONTAINER_NAME || true
-                        docker run -d --name $MSSQL_CONTAINER_NAME --restart=always \\
-                            -v /opt/mssql:/var/opt/mssql \\
-                            -e "ACCEPT_EULA=Y" \\
-                            -e "MSSQL_SA_PASSWORD=$SA_PASSWORD" \\
-                            -p 1433:1433 \\
-                            mcr.microsoft.com/mssql/server:2022-latest
-                        """
-                    }
-                }
+          stage("Running MSSQL")
+         {
+           steps{
+                  withCredentials([string(credentialsId: 'MSSQL-PASSWORD',  variable: 'PASSWD')]){
+                sh 'docker run -d --restart=always -v /opt/mssql:/var/opt/mssql -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Qwerty-1" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest'
+                  }
             }
-        }
-
-        stage("Перевірка стану контейнера") {
-            steps {
-                script {
-                    def container_status = sh(script: "docker inspect -f '{{.State.Running}}' $MSSQL_CONTAINER_NAME", returnStdout: true).trim()
-                    if (container_status != 'true') {
-                        error "❌ MSSQL контейнер не запустився! Перевірте логи."
-                    } else {
-                        echo "✅ MSSQL контейнер працює!"
-                    }
-                }
-            }
-        }
-
-        stage("Перевірка підключення до MSSQL") {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'MSSQL-PASSWORD', variable: 'SA_PASSWORD')]) {
-                        sh """
-                        sleep 10  # Очікуємо, поки MSSQL повністю запуститься
-                        docker exec $MSSQL_CONTAINER_NAME /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -Q "SELECT @@VERSION"
-                        """
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        failure {
-            script {
-                echo "⚠️ Помилка! Виводимо логи контейнера..."
-                sh "docker logs $MSSQL_CONTAINER_NAME || true"
-            }
-        }
+         }
     }
 }
