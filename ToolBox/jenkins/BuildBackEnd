@@ -6,7 +6,7 @@ pipeline  {
        stage("Change IP in appsettings.json")
          {
              steps{
-                sh "find BackEnd/Amazon-clone/ -type f -exec sed  -i 's#http://localhost:81#https://16.16.180.243/#g' {} +"
+                sh "find BackEnd/Amazon-clone/ -type f -exec sed  -i 's#http://localhost:81#https://16.16.180.243#g' {} +"
              }
          }
         stage("Change Database IP in appsettings.json")
